@@ -1,0 +1,211 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: observability
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: "your-cluster"
+        env: "production"
+
+    rule_files:
+      - /etc/prometheus/alerts/*.yml
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - alertmanager:9093
+
+    scrape_configs:
+
+      # ── Prometheus self-monitoring ──────────────
+      - job_name: "prometheus"
+        static_configs:
+          - targets: ["localhost:9090"]
+
+      # ── Auto-discover ALL pods with annotation ──
+      # Add this annotation to any pod to auto-scrape:
+      #   prometheus.io/scrape: "true"
+      #   prometheus.io/path: "/actuator/prometheus"
+      #   prometheus.io/port: "8080"
+      - job_name: "kubernetes-pods"
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+
+      # ── Auto-discover services with annotation ──
+      - job_name: "kubernetes-services"
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: service
+
+      # ══════════════════════════════════════════════
+      # YOUR 14 SERVICES — explicit scrape configs
+      # Replace <your-namespace> with actual namespace
+      # Replace <port> with actual port of each service
+      # ══════════════════════════════════════════════
+
+      - job_name: "authorization-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["authorization-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "authorization-service"
+          team: "platform"
+
+      - job_name: "azure-db-provisioning-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["azure-db-provisioning-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "azure-db-provisioning-service"
+          team: "infra"
+
+      - job_name: "clm-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["clm-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "clm-service"
+          team: "backend"
+
+      - job_name: "cpq-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["cpq-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "cpq-service"
+          team: "backend"
+
+      - job_name: "crm-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["crm-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "crm-service"
+          team: "backend"
+
+      - job_name: "iam-keycloak-provisioning-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["iam-keycloak-provisioning-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "iam-keycloak-provisioning-service"
+          team: "iam"
+
+      - job_name: "iam-keycloak-sync-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["iam-keycloak-sync-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "iam-keycloak-sync-service"
+          team: "iam"
+
+      - job_name: "metabench-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["metabench-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "metabench-service"
+          team: "backend"
+
+      - job_name: "notification-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["notification-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "notification-service"
+          team: "backend"
+
+      - job_name: "platform-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["platform-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "platform-service"
+          team: "platform"
+
+      - job_name: "pricing-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["pricing-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "pricing-service"
+          team: "backend"
+
+      - job_name: "revenue-management-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["revenue-management-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "revenue-management-service"
+          team: "backend"
+
+      - job_name: "tenant-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["tenant-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "tenant-service"
+          team: "platform"
+
+      - job_name: "vector-db-provisioning-service"
+        metrics_path: "/actuator/prometheus"
+        static_configs:
+          - targets: ["vector-db-provisioning-service.<your-namespace>.svc.cluster.local:8080"]
+        labels:
+          service: "vector-db-provisioning-service"
+          team: "infra"
+
+      # ── Kubernetes node metrics ─────────────────
+      - job_name: "kubernetes-nodes"
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)

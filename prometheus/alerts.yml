@@ -1,24 +1,25 @@
 groups:
+
+  # ── Host Alerts ──────────────────────────────
   - name: host_alerts
     rules:
-
       - alert: HostDown
         expr: up == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Host {{ $labels.instance }} is down"
+          summary: "{{ $labels.job }} is DOWN"
           description: "{{ $labels.instance }} has been unreachable for more than 1 minute."
 
       - alert: HighCPUUsage
-        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        expr: 100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: "High CPU on {{ $labels.instance }}"
-          description: "CPU usage is above 85% for 5 minutes (current: {{ $value | printf \"%.1f\" }}%)."
+          description: "CPU above 85% for 5 min (current: {{ $value | printf \"%.1f\" }}%)."
 
       - alert: HighMemoryUsage
         expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
@@ -26,35 +27,116 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High memory on {{ $labels.instance }}"
-          description: "Memory usage is above 90% (current: {{ $value | printf \"%.1f\" }}%)."
+          summary: "High Memory on {{ $labels.instance }}"
+          description: "Memory above 90% (current: {{ $value | printf \"%.1f\" }}%)."
 
-      - alert: DiskSpaceLow
-        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Low disk space on {{ $labels.instance }}"
-          description: "Root filesystem has less than 15% free (current: {{ $value | printf \"%.1f\" }}%)."
-
-  - name: container_alerts
+  # ── Microservice Alerts ──────────────────────
+  - name: microservice_alerts
     rules:
-
-      - alert: ContainerHighCPU
-        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Container {{ $labels.name }} high CPU"
-          description: "Container CPU usage is above 80% for 5 minutes."
-
-      - alert: ContainerHighMemory
-        expr: container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""} * 100 > 90
-        for: 5m
+      - alert: ServiceDown
+        expr: up{job=~"user-service|order-service|payment-service"} == 0
+        for: 30s
         labels:
           severity: critical
         annotations:
-          summary: "Container {{ $labels.name }} high memory"
-          description: "Container memory usage is above 90% of its limit."
+          summary: "Microservice {{ $labels.job }} is DOWN"
+          description: "{{ $labels.job }} has been down for 30 seconds."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate in {{ $labels.job }}"
+          description: "Error rate above 5% for 2 minutes (current: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency in {{ $labels.job }}"
+          description: "P95 latency above 1s (current: {{ $value | printf \"%.2f\" }}s)."
+
+  # ── PostgreSQL Alerts ────────────────────────
+  - name: postgres_alerts
+    rules:
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is DOWN"
+          description: "PostgreSQL has been unreachable for 30 seconds."
+
+      - alert: PostgresHighConnections
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL high connections"
+          description: "More than 80 active connections (current: {{ $value }})."
+
+      - alert: PostgresSlowQueries
+        expr: pg_stat_activity_max_tx_duration{state="active"} > 300
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL slow queries"
+          description: "Query running for more than 5 minutes."
+
+  # ── Redis Alerts ─────────────────────────────
+  - name: redis_alerts
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is DOWN"
+          description: "Redis has been unreachable for 30 seconds."
+
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory above 90% (current: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: RedisHighConnections
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis high connections"
+          description: "Redis has more than 100 clients (current: {{ $value }})."
+
+  # ── Kafka Alerts ─────────────────────────────
+  - name: kafka_alerts
+    rules:
+      - alert: KafkaConsumerLag
+        expr: kafka_consumer_lag_sum > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka consumer lag is high"
+          description: "Consumer lag above 1000 messages (current: {{ $value }})."
+
+      - alert: KafkaOfflinePartitions
+        expr: kafka_topic_partition_under_replicated_partition > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka has under-replicated partitions"
+          description: "{{ $value }} under-replicated partition(s) detected."

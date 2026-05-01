@@ -15,33 +15,74 @@ rule_files:
 
 scrape_configs:
 
-  # Prometheus self-monitoring
+  # ── Observability self-monitoring ────────────
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
 
-  # Host metrics via Node Exporter
+  - job_name: "grafana"
+    static_configs:
+      - targets: ["grafana:3000"]
+
+  - job_name: "alertmanager"
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  # ── Host & Container metrics ─────────────────
   - job_name: "node-exporter"
     static_configs:
       - targets: ["node-exporter:9100"]
 
-  # Container metrics via cAdvisor
   - job_name: "cadvisor"
     scrape_interval: 10s
     static_configs:
       - targets: ["cadvisor:8080"]
 
-  # Grafana self-metrics
-  - job_name: "grafana"
+  # ── PostgreSQL ───────────────────────────────
+  - job_name: "postgres"
     static_configs:
-      - targets: ["grafana:3000"]
+      - targets: ["postgres-exporter:9187"]
+    labels:
+      service: "database"
 
-  # Alertmanager self-metrics
-  - job_name: "alertmanager"
+  # ── Redis ────────────────────────────────────
+  - job_name: "redis"
     static_configs:
-      - targets: ["alertmanager:9093"]
+      - targets: ["redis-exporter:9121"]
+    labels:
+      service: "cache"
 
-  # ── Add your own services below ──────────────────
-  # - job_name: "my-app"
-  #   static_configs:
-  #     - targets: ["my-app:8000"]
+  # ── Kafka ────────────────────────────────────
+  - job_name: "kafka"
+    static_configs:
+      - targets: ["kafka-exporter:9308"]
+    labels:
+      service: "messaging"
+
+  # ── Microservices ────────────────────────────
+  - job_name: "user-service"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["user-service:3001"]
+    metrics_path: "/metrics"
+    labels:
+      service: "user-service"
+      team: "backend"
+
+  - job_name: "order-service"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["order-service:3002"]
+    metrics_path: "/metrics"
+    labels:
+      service: "order-service"
+      team: "backend"
+
+  - job_name: "payment-service"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["payment-service:3003"]
+    metrics_path: "/metrics"
+    labels:
+      service: "payment-service"
+      team: "backend"

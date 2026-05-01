@@ -1,0 +1,185 @@
+# ══════════════════════════════════════════════════════════════════
+# ADD THESE ANNOTATIONS TO EACH OF YOUR 14 EXISTING SERVICE YAMLs
+# This tells Prometheus to auto-scrape them
+# ══════════════════════════════════════════════════════════════════
+#
+# In your existing deployment YAML, under spec.template.metadata:
+#
+# metadata:
+#   annotations:
+#     prometheus.io/scrape: "true"
+#     prometheus.io/path: "/actuator/prometheus"
+#     prometheus.io/port: "8080"          ← change to your actual port
+#
+# ══════════════════════════════════════════════════════════════════
+
+# EXAMPLE — authorization-service patch
+# Run: kubectl patch deployment authorization-service -n <your-namespace> --patch-file authorization-service-patch.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authorization-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-db-provisioning-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clm-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpq-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iam-keycloak-provisioning-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iam-keycloak-sync-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metabench-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: revenue-management-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenant-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vector-db-provisioning-service
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
